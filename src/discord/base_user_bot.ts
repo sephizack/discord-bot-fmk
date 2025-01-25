@@ -9,6 +9,8 @@ export abstract class BaseDiscordUserBot {
 		this.name = name
 		this.discord = discord
 		this.config = config
+		Logger.debug(this.name, "Created with account config ", config)
+		this.init()
 	}
 	
 	public getBotName(): string
@@ -17,6 +19,7 @@ export abstract class BaseDiscordUserBot {
 	}
 
 	public abstract handleAction(type:string, data: any);
+	protected abstract init();
 
 	protected async sleep(ms) {
 		return new Promise(resolve => setTimeout(resolve, ms));
