@@ -1,0 +1,43 @@
+{
+  "name": "discord-bot-fmk",
+  "version": "1.1.0",
+  "description": "Any Discord bot framework",
+  "main": "dist/src/app.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sephizack/discord-bot-fmk.git"
+  },
+  "dependencies": {
+    "@discordjs/rest": "^1.7.0",
+    "config": "^3.2.4",
+    "discord-api-types": "^0.37.104",
+    "discord.js": "^14.16.3",
+    "node-persist": "^4.0.3"
+  },
+  "devDependencies": {
+    "@types/concurrently": "^4.1.0",
+    "@types/jest": "^25.2.1",
+    "concurrently": "^5.0.0",
+    "jest": "^29.7.0",
+    "nock": "^12.0.3",
+    "nodemon": "^3.1.7",
+    "tslint": "^5.20.1",
+    "typescript": "^5.0.4"
+  },
+  "scripts": {
+    "start": "tsc && node dist/src/app.js",
+    "build": "tsc --skipLibCheck",
+    "watch-node": "nodemon dist/src/app.js",
+    "watch": "concurrently -k \"npm run watch-ts\" \"npm run watch-node\"",
+    "watch-ts": "tsc -w",
+    "test": "tsc --build --clean && tsc && jest -t"
+  },
+  "author": "Tony Bisegna",
+  "license": "MIT"
+}

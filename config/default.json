@@ -1,0 +1,15 @@
+{
+	"MyDiscordBot1": {
+        "token" : "YOUR_TOKEN",
+        "channel": "YOUR_CHANNEL_ID",
+        "config": {
+            "apiUrl": "https://api.myaccount.com",
+            "credentials": {
+                "myaccount" : {
+                    "login": "me",
+                    "password": "COUCOU7777"
+                }
+            }
+        }
+    }
+}

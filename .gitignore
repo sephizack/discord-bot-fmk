@@ -1,0 +1,6 @@
+*.log
+node_modules/
+config/local.json
+dist
+persist
+.DS_Store
