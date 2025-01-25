@@ -9,7 +9,7 @@ export abstract class BaseDiscordUserBot {
 		this.name = name
 		this.discord = discord
 		this.config = config
-		Logger.debug(this.name, "Created with account config ", config)
+		Logger.debug(this.name, "Created with config ", config)
 		this.init()
 	}
 	
