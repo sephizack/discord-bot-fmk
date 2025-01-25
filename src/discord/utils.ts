@@ -1,4 +1,4 @@
-module Utils {
+namespace Utils {
     
     export function computeDateDiffInDays(requestedDateStr :string)
     {
