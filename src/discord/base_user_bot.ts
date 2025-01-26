@@ -2,7 +2,13 @@ import Logger from './logger.js'
 import DiscordBot from './discord_bot.js'
 import config from 'config'
 
-	
+
+type ApiCallResult = {
+	status: number,
+	isJson: boolean,
+	data?: any,
+	error?: string
+}
 export abstract class BaseDiscordUserBot {
 	
 	public constructor(name: string, discord: DiscordBot.BaseDiscordBot, config: any) {
@@ -30,7 +36,15 @@ export abstract class BaseDiscordUserBot {
 		return new Promise(resolve => setTimeout(resolve, ms));
 	}
 
-	protected async callApi(url = '', body = {}, method = 'POST', auth_header = "") 
+	protected async GET(url = '', auth_header = "") : Promise<ApiCallResult> {
+		return this.callApi(url, null, 'GET', auth_header)
+	}
+	
+	protected async POST(url = '', body = {}, auth_header = "") : Promise<ApiCallResult> {
+		return this.callApi(url, body, 'POST', auth_header)
+	}
+
+	protected async callApi(url = '', body = {}, method = 'POST', auth_header = "") : Promise<ApiCallResult>
 	{
 		await this.sleep(277);
 		let response = null;
@@ -94,6 +108,27 @@ export abstract class BaseDiscordUserBot {
 		}
 
 		return this.apiCallErrorHook(url, result)
+	}
+
+	protected getNowWithShift(op: string) {
+		if (!op)
+		{
+			return new Date()
+		}
+		let opMap = {
+			"m": 60,
+			"h": 60 * 60,
+			"d": 60 * 60 * 24
+		}
+		for (let key in opMap)
+		{
+			if (op.indexOf(key) > 0)
+			{
+				let value = parseInt(op.replace(key, ""))
+				return new Date(new Date().getTime() + 1000 * value * opMap[key])
+			}
+		}
+		throw new Error(`Invalid operation: ${op}`)
 	}
 
 	discord: DiscordBot.BaseDiscordBot
