@@ -41,6 +41,12 @@ export class DiscordBotApp {
 			return
 		}
 
+		if (dsChannel == "YOUR_CHANNEL_ID")
+		{
+			Logger.error(`Discord channel id for ${botName} is not set, update it in the config file`)
+			return
+		}
+
 		let aDiscordBot = new DiscordBot.BaseDiscordBot(
 			dsToken,
 			dsChannel,

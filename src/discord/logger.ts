@@ -16,6 +16,8 @@ namespace Logger {
         log(ColorFgWhite,  "DEBUG",  ...args);
     }
 
+    
+
     // Private
     function getTimestamp() {
         var d = new Date();

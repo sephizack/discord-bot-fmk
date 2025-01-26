@@ -351,6 +351,10 @@ namespace DiscordBot {
         public async sendMessage(content:string, options:any = {}) {
             let all_buttons : Discord.ButtonBuilder[] = []
             let message = new Discord.EmbedBuilder();
+            if (content.length > 4090)
+            {
+                content = content.substring(0, 4070) + "...\n*(truncated message)*"
+            }
             message.setDescription(content)
             if (options.color)
             {
