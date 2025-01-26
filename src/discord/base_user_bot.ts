@@ -15,13 +15,17 @@ export abstract class BaseDiscordUserBot {
 		this.name = name
 		this.discord = discord
 		this.config = config
-		Logger.debug(this.name, "Created with config ", config)
+		// Logger.debug(this.name, "Created !")
 		this.init()
 	}
 	
 	public getBotName(): string
 	{
 		return this.name
+	}
+
+	protected log(logFunction: any, ...args:any[]) {
+		logFunction(`[${this.name}]`, ...args)
 	}
 
 	protected async apiCallErrorHook(url: string, result: any) {
