@@ -4,15 +4,6 @@ import PostAction from './PostAction.js'
 import Utils from './utils.js'
 
 namespace DiscordBot {
-
-    type CustomPollOptions = {
-        durationHours?: number,
-        remindAfterHours?: number,
-        reminderNbUniqueUsersExpected?: number,
-        allowMultiselect?: boolean,
-        callback?: any,
-	}
-
     type CustomPollOptionsPrivate = {
         durationHours?: number,
         remindAfterHours?: number,
@@ -23,6 +14,51 @@ namespace DiscordBot {
         _answersAdditionalData?: any,
         _createdTimestamp?: number,
         _lastNbVotes?: any
+    }
+
+    export namespace Models {
+        export type CustomPollOptions = {
+            durationHours?: number,
+            remindAfterHours?: number,
+            reminderNbUniqueUsersExpected?: number,
+            allowMultiselect?: boolean,
+            callback?: any,
+        }
+
+        export type ButtonInput = {
+            id: string,
+            label: string,
+            placeholder: string,
+            value?: string
+        }
+
+        export type ButtonModel = {
+            label: string,
+            emoji?: string,
+            url?: string,
+            callback?: CallableFunction,
+            actionDescription?: string,
+            isSecondary?: boolean,
+            options?: {
+                needsConfirmation?: boolean
+                announcement?: boolean,
+                executeOnlyOnce?: boolean,
+                inputs?: ButtonInput[]
+            }
+        }
+
+        export type MessageFiled = {
+            name: string,
+            value: string
+        }
+
+        export type MessageOptions = {
+            title?: string,
+            color?: Discord.ColorResolvable,
+            fields?: MessageFiled[],
+            buttons?: ButtonModel[],
+            image?: string
+        }
     }
 
     export class BaseDiscordBot {
@@ -348,7 +384,8 @@ namespace DiscordBot {
             buttonInteraction.showModal(modal);
         }
         
-        public async sendMessage(content:string, options:any = {}) {
+        
+        public async sendMessage(content:string, options:Models.MessageOptions = {}) : Promise<Discord.Message[]> {
             let all_buttons : Discord.ButtonBuilder[] = []
             let message = new Discord.EmbedBuilder();
             if (content.length > 4090)
@@ -402,17 +439,19 @@ namespace DiscordBot {
 
             
             // Send messages
+            let messagesSent : Discord.Message[] = []
             try {
                 let publications = this.buildPublications(message, all_buttons)
                 for (let publi of publications)
                 {
                     for (let aChannel of this.channelsToNotify) {
-                        await aChannel.send(publi)
+                        messagesSent.push(await aChannel.send(publi))
                     }
                 }
             } catch (error) {
                 Logger.error(this.prefix(), "Error sending message", error, message)
             }
+            return messagesSent
         }
         
         private buildPublications(message: Discord.EmbedBuilder, all_buttons: Discord.ButtonBuilder[]) {
@@ -441,7 +480,7 @@ namespace DiscordBot {
             return publications
         }
         
-        private buildButton(aButton: any): Discord.ButtonBuilder {
+        private buildButton(aButton: Models.ButtonModel): Discord.ButtonBuilder {
             if (!aButton || !aButton.label)
             {
                 Logger.error(this.prefix(), "Button must have a label", aButton)
@@ -512,7 +551,7 @@ namespace DiscordBot {
             return actionRowsList
         }
 
-        public async sendPoll(question:string, answers:any, options:CustomPollOptions = {}) {
+        public async sendPoll(question:string, answers:any, options:Models.CustomPollOptions = {}) {
             try {
                 let pollOptions : CustomPollOptionsPrivate = {
                     remindAfterHours: options.remindAfterHours ? options.remindAfterHours : 0,
@@ -524,7 +563,7 @@ namespace DiscordBot {
                     _lastNbVotes: {}
                 }
                 for (let c of this.channelsToNotify) {
-                    let aChannel : Discord.TextChannel = c;
+                    let aChannel = c
 
                     let discordPollData = {
                         question: { text: question} ,
@@ -599,7 +638,7 @@ namespace DiscordBot {
                         count: event.count
                     }
                 }
-                Logger.debug(this.prefix(), "Reaction callback data", reaction_callback_data)
+                // Logger.debug(this.prefix(), "Reaction callback data", reaction_callback_data)
                 this.userActionCallback("reaction", reaction_callback_data)
             } catch (error) {
                 Logger.error(this.prefix(), "Error handling reaction", error)
@@ -610,8 +649,13 @@ namespace DiscordBot {
             this.channelsToNotify = []
             for (let aChannelId of this.channelIDsToNotify) {
                 try {
-                    let channel = await this.client.channels.fetch(aChannelId);
-                    this.channelsToNotify.push(channel)
+                    let channel:Discord.Channel = await this.client.channels.fetch(aChannelId);
+                    if (!channel || !channel.isTextBased())
+                    {
+                        Logger.warning(this.prefix(), "Channel is not text based, skipping", channel)
+                        continue
+                    }
+                    this.channelsToNotify.push(channel as Discord.TextChannel)
                     Logger.ok(this.prefix(), `Channel with ID '${aChannelId}' ready to be notified`)
                 } catch (error) {
                     Logger.warning(this.prefix(), `Channel with ID '${aChannelId}' not found:`, error)
@@ -626,7 +670,7 @@ namespace DiscordBot {
         isConnected: boolean;
         botUsername:string
         client: Discord.Client;
-        channelsToNotify:any;
+        channelsToNotify:Discord.TextChannel[];
         userActionCallback:any;
         channelIDsToNotify:string[];
         postActionMap:Map<String, PostAction>;
