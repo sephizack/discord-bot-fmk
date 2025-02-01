@@ -1,14 +1,10 @@
 import Logger from './logger.js'
 import DiscordBot from './discord_bot.js'
 import config from 'config'
+import Utils from './utils.js'
 
 
-type ApiCallResult = {
-	status: number,
-	isJson: boolean,
-	data?: any,
-	error?: string
-}
+
 export abstract class BaseDiscordUserBot {
 	
 	public constructor(name: string, discord: DiscordBot.BaseDiscordBot, config: any) {
@@ -37,84 +33,24 @@ export abstract class BaseDiscordUserBot {
 	protected abstract init();
 
 	protected async sleep(ms) {
-		return new Promise(resolve => setTimeout(resolve, ms));
+		return Utils.sleep(ms)
 	}
 
-	protected async GET(url = '', auth_header = "") : Promise<ApiCallResult> {
+	protected async GET(url = '', auth_header = "") : Promise<Utils.ApiCallResult> {
 		return this.callApi(url, null, 'GET', auth_header)
 	}
 	
-	protected async POST(url = '', body = {}, auth_header = "") : Promise<ApiCallResult> {
+	protected async POST(url = '', body = {}, auth_header = "") : Promise<Utils.ApiCallResult> {
 		return this.callApi(url, body, 'POST', auth_header)
 	}
 
-	protected async callApi(url = '', body = {}, method = 'POST', auth_header = "") : Promise<ApiCallResult>
+	protected async callApi(url = '', body = {}, method = 'POST', auth_header = "") : Promise<Utils.ApiCallResult>
 	{
-		await this.sleep(277);
-		let response = null;
-		try {
-			response = await fetch(url, {
-				"headers": {
-					"accept": "*/*",
-					"accept-language": "en-US,en;q=0.9",
-					"content-type": "application/json; charset=UTF-8",
-					"sec-ch-ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\"",
-					"sec-ch-ua-mobile": "?0",
-					"sec-ch-ua-platform": "\"macOS\"",
-					"sec-fetch-dest": "empty",
-					"sec-fetch-mode": "cors",
-					"sec-fetch-site": "same-origin",
-					"x-requested-with": "XMLHttpRequest",
-					"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-					"Authorization": auth_header == "" ? null : auth_header
-				},
-				"body": body == null ? null : JSON.stringify(body),
-				"method": method
-			});
-		}
-		catch (e)
-		{
-			Logger.error(this.name, "Error while calling API "+url, e);
-			return {
-				status: 500,
-				error: e,
-				isJson: false
-			}
-		}
-		
-
-		let rawData:any = await response.text();
-		if (response.status != 200 && response.status != 201)
-		{
-			return {
-				status: response.status,
-				error: response.statusText + " - " + rawData,
-				isJson: false
-			}
-		}
-		let isJson = false
-		try {
-			rawData = JSON.parse(rawData);
-			isJson = true;
-		}
-		catch (e) {
-			// Not json
-		}
-		if (isJson && rawData.status == 400)
-		{
-			rawData.error = rawData.message
-		}
-
-		let result = {
-			status: response.status,
-			isJson: isJson,
-			data: rawData
-		}
-
+		let result = await Utils.callApi(url, body, method, auth_header)
 		return this.apiCallErrorHook(url, result)
 	}
 
-	protected getNowWithShift(op: string) {
+	protected getNowWithShift(op: string) : Date {
 		if (!op)
 		{
 			return new Date()
