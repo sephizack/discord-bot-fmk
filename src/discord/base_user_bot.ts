@@ -11,8 +11,6 @@ export abstract class BaseDiscordUserBot {
 		this.name = name
 		this.discord = discord
 		this.config = config
-		// Logger.debug(this.name, "Created !")
-		this.init()
 	}
 	
 	public getBotName(): string
@@ -30,7 +28,7 @@ export abstract class BaseDiscordUserBot {
 	}
 
 	public abstract handleAction(type:string, data: any);
-	protected abstract init();
+	public abstract init();
 
 	protected async sleep(ms) {
 		return Utils.sleep(ms)

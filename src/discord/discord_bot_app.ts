@@ -104,6 +104,7 @@ export class DiscordBotApp {
 		{
 			Logger.info(`Creating user bot ${name} ...`)
 			botData.userBot = new botData.userBotConstructor(name, botData.discordBot, botData.botsOptions.config)
+			botData.userBot.init()
 		}
 		else if (botData.userBot == null)
 		{
