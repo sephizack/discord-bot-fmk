@@ -211,12 +211,19 @@ namespace DiscordBot {
                 Logger.ok(this.prefix(), `Sucessfully logged in as ${this.client.user.tag} ! (Discriminator: ${this.client.user.discriminator})`);
                 //Logger.debug(this.prefix(), this.client);
                 await this.getChannels()
-                this.userActionCallback("connected", "")
+                try {
+                    await this.userActionCallback("connected", "")
+                } catch (error) {
+                    Logger.error(this.prefix(), "Error while initializing user bot", error)
+                    await this.client.destroy()
+                    Logger.error(this.prefix(), "Discord client destroyed")
+                    return
+                }
 
                 let pres:Discord.PresenceData = {}
                 pres.status = 'online';
                 pres.activities = [{
-                    name: '🎾 🎬 🇯🇵',
+                    name: '🎾 🎬 🇯🇵 🤖',
                     type: Discord.ActivityType.Custom
                 }];
 

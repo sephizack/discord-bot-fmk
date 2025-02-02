@@ -50,8 +50,8 @@ export class DiscordBotApp {
 		let aDiscordBot = new DiscordBot.BaseDiscordBot(
 			dsToken,
 			dsChannel,
-			(type, data) => {
-				this.discordActionDispatcher(botName, type, data)
+			async (type, data) => {
+				await this.discordActionDispatcher(botName, type, data)
 			}
 		)
 		
@@ -91,7 +91,7 @@ export class DiscordBotApp {
 	}
 
 
-	private discordActionDispatcher(name, type, data)
+	private async discordActionDispatcher(name, type, data)
 	{
 		let botData: BotData = this.allDiscordsBots.get(name)
 		if (botData == null)
@@ -103,8 +103,13 @@ export class DiscordBotApp {
 		if (type == "connected")
 		{
 			Logger.info(`Creating user bot ${name} ...`)
-			botData.userBot = new botData.userBotConstructor(name, botData.discordBot, botData.botsOptions.config)
-			botData.userBot.init()
+			try {
+				botData.userBot = new botData.userBotConstructor(name, botData.discordBot, botData.botsOptions.config)
+				await botData.userBot.init()
+			} catch (e) {
+				Logger.error(`Error while creating user bot ${name}:`, e)
+				throw e
+			}
 		}
 		else if (botData.userBot == null)
 		{
