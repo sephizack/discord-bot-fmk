@@ -30,6 +30,8 @@ namespace DiscordBot {
             label: string,
             placeholder: string,
             value?: string
+            required?: boolean
+            textarea?: boolean
         }
 
         export type ButtonModel = {
@@ -377,14 +379,13 @@ namespace DiscordBot {
                 .setCustomId(buttonInteraction.customId)
                 .setTitle('Input required');
             for (let input of postAction.expectedInputs) {
-
                 const inputField = new Discord.TextInputBuilder()
                     .setCustomId(input.id ? input.id : "input")
                     .setLabel(input.label ? input.label : "input")
                     .setPlaceholder(input.placeholder ? input.placeholder : "")
                     .setValue(input.value ? input.value : "")
-                    .setRequired(true)
-                    .setStyle(Discord.TextInputStyle.Short);
+                    .setRequired(input.required === false ? false : true)
+                    .setStyle(input.textarea ? Discord.TextInputStyle.Paragraph : Discord.TextInputStyle.Short);
                 const actionrow:any = new Discord.ActionRowBuilder().addComponents(inputField);
                 modal.addComponents(actionrow);
             }

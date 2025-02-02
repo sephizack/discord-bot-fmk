@@ -1,4 +1,5 @@
 import Logger from './logger.js'
+import DiscordBot from './discord_bot.js'
 export class PostAction {
     
 	public constructor(description: string, emoji: string, emojiCount:number, callback: any, options: any) {
@@ -11,6 +12,10 @@ export class PostAction {
 		this.announcement = options && options.announcement ? options.announcement : false
 		this.ephemeralReply = options && options.ephemeralReply ? options.ephemeralReply : false
 		this.executeOnlyOnce = options && options.executeOnlyOnce ? options.executeOnlyOnce : false
+		if (options && options.inputs && options.inputs.length > 5) {
+			Logger.error("PostAction", "Too many inputs, max 5 allowed. Taking only the first 5")
+			options.inputs = options.inputs.slice(0, 5)
+		}
 		this.expectedInputs = options && options.inputs ? options.inputs : []
 		this.providedInputs = {}
 	}
@@ -69,8 +74,8 @@ export class PostAction {
 	announcement:boolean;
 	ephemeralReply:boolean;
 	executeOnlyOnce:boolean;
-	public expectedInputs:any;
-	public providedInputs:any;
+	public expectedInputs:DiscordBot.Models.ButtonInput[];
+	public providedInputs:any
 }
 
 export default PostAction
