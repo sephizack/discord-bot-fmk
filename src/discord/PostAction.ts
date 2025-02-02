@@ -1,7 +1,6 @@
 import Logger from './logger.js'
 import DiscordBot from './discord_bot.js'
-export class PostAction {
-    
+export class PostAction {    
 	public constructor(description: string, emoji: string, emojiCount:number, callback: any, options: any) {
 		this.description = description
 		this.emoji = emoji
@@ -18,6 +17,7 @@ export class PostAction {
 		}
 		this.expectedInputs = options && options.inputs ? options.inputs : []
 		this.providedInputs = {}
+		this.modalTitle = options && options.modalTitle ? options.modalTitle : null
 	}
 
 	public isConfirmationResquested() {
@@ -27,6 +27,10 @@ export class PostAction {
 	public isAnnouced() {
 		return this.announcement
 	}
+
+	public getModalTitle(): string {
+        return this.modalTitle ? this.modalTitle : "Input required"
+    }
 
 	public isEphemeralReply() {
 		return this.ephemeralReply
@@ -67,6 +71,7 @@ export class PostAction {
 	
 	description:string;
 	emoji:string;
+	modalTitle:string;
 	emojiCount:number;
 	callback:any;
 	isExecuted:boolean;

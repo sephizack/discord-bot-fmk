@@ -46,6 +46,7 @@ namespace DiscordBot {
                 announcement?: boolean,
                 executeOnlyOnce?: boolean,
                 inputs?: ButtonInput[]
+                modalTitle?: string
             }
         }
 
@@ -377,7 +378,7 @@ namespace DiscordBot {
             Logger.debug(this.prefix(), "Showing modal for post action", postAction.description)
             const modal = new Discord.ModalBuilder()
                 .setCustomId(buttonInteraction.customId)
-                .setTitle('Input required');
+                .setTitle(postAction.getModalTitle());
             for (let input of postAction.expectedInputs) {
                 const inputField = new Discord.TextInputBuilder()
                     .setCustomId(input.id ? input.id : "input")
@@ -419,7 +420,7 @@ namespace DiscordBot {
                     if (aField.name && aField.value) {
                         message.addFields({
                             name: aField.name,
-                            value: aField.value
+                            value: aField.value.length > 1024 ? aField.value.substring(0, 1020) + "..." : aField.value
                         })
                     }
                     else 
