@@ -106,7 +106,7 @@ namespace Utils {
         
 
         let rawData:any = await response.text();
-        if (response.status != 200 && response.status != 201)
+        if (response.status < 200 || response.status >= 300)
         {
             return {
                 status: response.status,
