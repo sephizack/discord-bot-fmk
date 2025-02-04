@@ -654,6 +654,10 @@ namespace DiscordBot {
             }
         }
 
+        public async sendCustomAction(actionType:string, data:any) {
+            await this.userActionCallback(actionType, data)
+        }
+
         private async getChannels() {
             this.channelsToNotify = []
             for (let aChannelId of this.channelIDsToNotify) {

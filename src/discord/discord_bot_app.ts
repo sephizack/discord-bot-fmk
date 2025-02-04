@@ -22,7 +22,7 @@ export class DiscordBotApp {
 		this.setupUnhandledIssues()
 	}
 
-	public createUserBot(botName: string, userBotConstructor: typeof BaseDiscordUserBot, dsToken: string, dsChannel: string, options: BotOptions) {
+	public createUserBot(botName: string, userBotConstructor: typeof BaseDiscordUserBot, dsToken: string, dsChannel: string, options: BotOptions) : DiscordBot.BaseDiscordBot {
 		if (this.allDiscordsBots.has(botName))
 		{
 			Logger.warning(`Discord bot for ${botName} already exists`)
@@ -54,7 +54,6 @@ export class DiscordBotApp {
 				await this.discordActionDispatcher(botName, type, data)
 			}
 		)
-		
 		let aUserBot: BotData = {
 			discordBot: aDiscordBot,
 			botsOptions: options,
@@ -62,6 +61,8 @@ export class DiscordBotApp {
 			userBot: null,
 		}
 		this.allDiscordsBots.set(botName, aUserBot)
+		
+		return aDiscordBot
 	}
 
 	public testMessage(botName: string, message: string, timeout_ms: number = 0) {
