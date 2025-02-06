@@ -488,10 +488,8 @@ namespace DiscordBot {
                     }
                 }
             }
-            Logger.debug(this.prefix(), "Image = ", options.image)
             if (options.image && options.image !== "")
             {
-                Logger.debug(this.prefix(), "Setting image", options.image)
                 messageEmbed.setImage(options.image)
             }
         }
