@@ -50,15 +50,16 @@ namespace DiscordBot {
             }
         }
 
-        export type MessageFiled = {
+        export type MessageField = {
             name: string,
             value: string
         }
 
         export type MessageOptions = {
             title?: string,
+            content?: string,
             color?: Discord.ColorResolvable,
-            fields?: MessageFiled[],
+            fields?: MessageField[],
             buttons?: ButtonModel[],
             image?: string
         }
@@ -394,42 +395,35 @@ namespace DiscordBot {
         }
         
         
-        public async sendMessage(content:string, options:Models.MessageOptions = {}) : Promise<Discord.Message[]> {
-            let all_buttons : Discord.ButtonBuilder[] = []
-            let message = new Discord.EmbedBuilder();
-            if (content.length > 4090)
+        public async editMessageEmbed(existingMessage:Discord.Message, options:Models.MessageOptions = {}) : Promise<boolean> {
+            if (existingMessage.embeds.length == 0)
             {
-                content = content.substring(0, 4070) + "...\n*(truncated message)*"
+                Logger.info(this.prefix(), "No embeds found to edit in message", existingMessage)
+                return false;
             }
-            message.setDescription(content)
-            if (options.color)
+            if (options.buttons)
             {
-                message.setColor(options.color)
+                Logger.warning(this.prefix(), "Buttons cannot be edited for now, new buttons will be ignored")
             }
-            else
-            {
-                message.setColor('#0099ff')
+            let messageEmbedCopy = new Discord.EmbedBuilder(existingMessage.embeds[0]);
+            this.buildEmbedFromOptions(messageEmbedCopy, options)
+            try {
+                await existingMessage.edit({ 
+                    embeds: [messageEmbedCopy] 
+                });
+            } catch (error) {
+                Logger.error(this.prefix(), "Error editing message", error, messageEmbedCopy)
+                return false
             }
-            if (options.title)
-            {
-                message.setTitle(options.title)
-            }
-            if (options.fields)
-            {
-                for (let aField of options.fields) {
-                    if (aField.name && aField.value) {
-                        message.addFields({
-                            name: aField.name,
-                            value: aField.value.length > 1024 ? aField.value.substring(0, 1020) + "..." : aField.value
-                        })
-                    }
-                    else 
-                    {
-                        Logger.warning(this.prefix(), "Field skiped, must have a name and a value", aField)
-                    }
-                }
-            }
+            return true
+        }
 
+        public async sendMessageEmbed(options:Models.MessageOptions) : Promise<Discord.Message[]> {
+            options.color = options.color ? options.color : '#0099ff'
+            let messageEmbed = new Discord.EmbedBuilder();
+            this.buildEmbedFromOptions(messageEmbed, options)
+
+            let all_buttons : Discord.ButtonBuilder[] = []
             if (options.buttons)
             {
                 for (let aButton of options.buttons) {
@@ -440,17 +434,12 @@ namespace DiscordBot {
                     }
                 }
             }
-
-            if (options.image)
-            {
-                message.setImage(options.image)
-            }
-
+            
             
             // Send messages
             let messagesSent : Discord.Message[] = []
             try {
-                let publications = this.buildPublications(message, all_buttons)
+                let publications = this.buildPublications(messageEmbed, all_buttons)
                 for (let publi of publications)
                 {
                     for (let aChannel of this.channelsToNotify) {
@@ -458,9 +447,61 @@ namespace DiscordBot {
                     }
                 }
             } catch (error) {
-                Logger.error(this.prefix(), "Error sending message", error, message)
+                Logger.error(this.prefix(), "Error sending message", error, messageEmbed)
             }
             return messagesSent
+        }
+
+        private buildEmbedFromOptions(messageEmbed : Discord.EmbedBuilder, options : Models.MessageOptions) {
+            Logger.debug(this.prefix(), "Building embed from options", options)
+            let content = options.content
+            if (content)
+            {
+                if (content.length > 4090)
+                {
+                    content = content.substring(0, 4070) + "...\n*(truncated message)*"
+                }
+                messageEmbed.setDescription(content)
+            }
+
+            if (options.color)
+            {
+                messageEmbed.setColor(options.color)
+            }
+            if (options.title)
+            {
+                messageEmbed.setTitle(options.title)
+            }
+            if (options.fields)
+            {
+                messageEmbed.setFields([])
+                for (let aField of options.fields) {
+                    if (aField.name && aField.value) {
+                        messageEmbed.addFields({
+                            name: aField.name,
+                            value: aField.value.length > 1024 ? aField.value.substring(0, 1020) + "..." : aField.value
+                        })
+                    }
+                    else 
+                    {
+                        Logger.warning(this.prefix(), "Field skiped, must have a name and a value", aField)
+                    }
+                }
+            }
+            Logger.debug(this.prefix(), "Image = ", options.image)
+            if (options.image && options.image !== "")
+            {
+                Logger.debug(this.prefix(), "Setting image", options.image)
+                messageEmbed.setImage(options.image)
+            }
+        }
+
+        /**
+         * @deprecated Use sendMessageEmbed instead
+         */
+        public async sendMessage(paramContent:string, options:Models.MessageOptions = {}) : Promise<Discord.Message[]> {
+            options.content = options.content ? options.content : paramContent // Support legacy content param
+            return await this.sendMessageEmbed(options)
         }
         
         private buildPublications(message: Discord.EmbedBuilder, all_buttons: Discord.ButtonBuilder[]) {
@@ -473,7 +514,6 @@ namespace DiscordBot {
             let actionRowsList : Discord.ActionRowBuilder[][] = this.buildActionRowsList(all_buttons)
             for (let actionRows of actionRowsList)
             {
-                let aMessageToSend = null
                 if (publications.length == 0)
                 {
                     publications.push({ embeds: [message], components: actionRows})
