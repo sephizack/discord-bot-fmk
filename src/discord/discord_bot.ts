@@ -395,11 +395,11 @@ namespace DiscordBot {
         }
         
         
-        public async editMessageEmbed(existingMessage:Discord.Message, options:Models.MessageOptions = {}) : Promise<boolean> {
+        public async editMessageEmbed(existingMessage:Discord.Message, options:Models.MessageOptions = {}) : Promise<Discord.Message> {
             if (existingMessage.embeds.length == 0)
             {
                 Logger.info(this.prefix(), "No embeds found to edit in message", existingMessage)
-                return false;
+                return null;
             }
             if (options.buttons)
             {
@@ -408,14 +408,15 @@ namespace DiscordBot {
             let messageEmbedCopy = new Discord.EmbedBuilder(existingMessage.embeds[0]);
             this.buildEmbedFromOptions(messageEmbedCopy, options)
             try {
-                await existingMessage.edit({ 
+                let res : Discord.Message = await existingMessage.edit({
                     embeds: [messageEmbedCopy] 
                 });
+                return res
             } catch (error) {
                 Logger.error(this.prefix(), "Error editing message", error, messageEmbedCopy)
-                return false
+                return null
             }
-            return true
+            return null;
         }
 
         public async sendMessageEmbed(options:Models.MessageOptions) : Promise<Discord.Message[]> {
