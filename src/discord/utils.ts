@@ -99,7 +99,7 @@ namespace Utils {
             Logger.error(this.name, "Error while calling API "+url, e);
             return {
                 status: 500,
-                error: e,
+                error: JSON.stringify(e),
                 isJson: false
             }
         }
@@ -124,7 +124,7 @@ namespace Utils {
         }
         if (isJson && rawData.status == 400)
         {
-            rawData.error = rawData.message
+            rawData.error = JSON.stringify(rawData.message)
         }
 
         let result = {

@@ -22,7 +22,7 @@ export abstract class BaseDiscordUserBot {
 		logFunction(`[${this.name}]`, ...args)
 	}
 
-	protected async apiCallErrorHook(url: string, result: any) {
+	protected async apiCallErrorHook(url: string, result: any) : Promise<Utils.ApiCallResult> {
 		Logger.info(this.name, "No API error hook defined")
 		return result
 	}

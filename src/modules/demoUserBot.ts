@@ -3,9 +3,10 @@ import Utils from '../discord/utils.js'
 import { BaseDiscordUserBot } from '../discord/base_user_bot.js';
 
 export class DemoUserBot extends BaseDiscordUserBot {
-	protected async init() {
-		this.discord.sendMessage("Hello I'm "+this.name, {
+	public async init() {
+		this.discord.sendMessageEmbed({
 			title: "Bot started",
+			content: "Hello I'm "+this.name,
 			color: "#800080",
 			fields: [],
 			buttons: this.getHelpButtons()
@@ -85,9 +86,9 @@ export class DemoUserBot extends BaseDiscordUserBot {
 	}
 
 	private displayHelp() {
-		this.discord.sendMessage(`Demo bot`, {
+		this.discord.sendMessageEmbed({
 			title: `Bot Help`,
-			description: `Usage: @NASBot <search>`,
+			content: `Usage: @NASBot <search>`,
 			fields: [
 				{
 					name: `@NASBot <search_text>`,
