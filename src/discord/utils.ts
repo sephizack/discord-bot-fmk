@@ -65,6 +65,10 @@ namespace Utils {
     export async function GET(url = '', auth_header = "") : Promise<ApiCallResult> {
         return callApi(url, null, 'GET', auth_header)
     }
+
+    export function PUT(url = '', body = {}, auth_header = "") : Promise<ApiCallResult> {
+		return callApi(url, null, 'PUT', auth_header)
+	}
     
     export async function POST(url = '', body = {}, auth_header = "") : Promise<ApiCallResult> {
         return callApi(url, body, 'POST', auth_header)
