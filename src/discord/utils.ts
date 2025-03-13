@@ -108,7 +108,15 @@ namespace Utils {
             }
         }
         
-
+        if (!response)
+        {
+            Logger.error(this.name, "No response from API "+url);
+            return {
+                status: 500,
+                error: "No response from API "+url,
+                isJson: false
+            }
+        }
         let rawData:any = await response.text();
         if (response.status < 200 || response.status >= 300)
         {
