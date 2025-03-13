@@ -134,7 +134,7 @@ namespace Utils {
         catch (e) {
             // Not json
         }
-        if (isJson && rawData.status == 400)
+        if (isJson && response.status == 400)
         {
             rawData.error = JSON.stringify(rawData.message)
         }
