@@ -1,5 +1,7 @@
 import Logger from './logger.js'
 import DiscordBot from './discord_bot.js'
+import Discord from 'discord.js'
+
 export class PostAction {    
 	public constructor(description: string, emoji: string, emojiCount:number, callback: any, options: any) {
 		this.description = description
@@ -60,13 +62,13 @@ export class PostAction {
 		this.providedInputs = {}
     }
 
-	public async run() : Promise<any> {
+	public async run(msg : Discord.Message) : Promise<any> {
 		if (this.isExecuted && this.executeOnlyOnce) {
 			Logger.info("PostAction", "Action already executed, skipping")
 			return
 		}
 		this.isExecuted = true
-		return await this.callback(this.providedInputs)
+		return await this.callback(this.providedInputs, msg)
 	}
 	
 	description:string;

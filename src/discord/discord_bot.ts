@@ -307,7 +307,7 @@ namespace DiscordBot {
                 return await modalInteraction.reply(interactionConfirmation)
             }
             
-            await this.runPostAction(modalInteraction, postAction)
+            await this.runPostAction(modalInteraction, postAction, null)
         }
 
         private async handleButtonInteraction(buttonInteraction: Discord.ButtonInteraction<Discord.CacheType>) {
@@ -329,7 +329,7 @@ namespace DiscordBot {
                     postAction.resetInputs();
                     return this.handleGetInputViaModal(buttonInteraction, postAction)
                 }
-                this.runPostAction(buttonInteraction, postAction)
+                this.runPostAction(buttonInteraction, postAction, buttonInteraction.message)
             }
             else
             {
@@ -350,7 +350,7 @@ namespace DiscordBot {
             }
         }
 
-        private async runPostAction(interaction: any, postAction: PostAction) {
+        private async runPostAction(interaction: any, postAction: PostAction, message: Discord.Message) {
             if (postAction.isAnnouced()) {
                 this.sendMessage(`Action **${postAction.description}** requested by ${interaction.user.displayName}`, {color: '#0099ff'})
             }
@@ -359,7 +359,7 @@ namespace DiscordBot {
                 await interaction.deferReply({
                     ephemeral: postAction.isEphemeralReply()
                 })
-                let cb_reply = await postAction.run()
+                let cb_reply = await postAction.run(message)
                 if (cb_reply)
                 {
                     await interaction.editReply(cb_reply)
@@ -471,6 +471,10 @@ namespace DiscordBot {
             }
             if (options.title)
             {
+                if (options.title.length > 250)
+                {
+                    options.title = options.title.substring(0, 250) + "..."
+                }
                 messageEmbed.setTitle(options.title)
             }
             if (options.fields)
