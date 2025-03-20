@@ -66,7 +66,6 @@ namespace DiscordBot {
     }
 
     export class BaseDiscordBot {
-
         public constructor(token: string, channel:string, userActionCallback:any) {
             this.client = new Discord.Client({
                 intents: [Discord.GatewayIntentBits.MessageContent
@@ -75,6 +74,11 @@ namespace DiscordBot {
                         ,Discord.GatewayIntentBits.DirectMessages
                         ,Discord.GatewayIntentBits.GuildIntegrations
                         ,Discord.GatewayIntentBits.GuildMessagePolls
+                        ,Discord.GatewayIntentBits.GuildMembers
+                        ,Discord.GatewayIntentBits.GuildPresences
+                        ,Discord.GatewayIntentBits.GuildMessageTyping
+                        ,Discord.GatewayIntentBits.DirectMessageReactions
+                        ,Discord.GatewayIntentBits.DirectMessages
                         ,Discord.GatewayIntentBits.Guilds]
                 
             });
@@ -245,7 +249,8 @@ namespace DiscordBot {
                 this.handleSpecialMessage(message)
             });
             this.client.on(Discord.Events.MessageReactionAdd, (event, user) => {
-                if (this.channelIDsToNotify.indexOf(event.message.channelId) == -1) {
+                let isReactionFromDM = event?.message?.channel?.isDMBased()
+                if (!isReactionFromDM && this.channelIDsToNotify.indexOf(event.message.channelId) == -1) {
                     return
                 }
                 this.handleReactionAddition(event, user)
@@ -255,7 +260,8 @@ namespace DiscordBot {
                     if (interaction.isButton())
                     {
                         let buttonInteraction:Discord.ButtonInteraction = interaction
-                        if (this.channelIDsToNotify.indexOf(buttonInteraction.message.channelId) == -1) {
+                        let isInteractionFromDM = buttonInteraction?.channel?.isDMBased()
+                        if (!isInteractionFromDM && this.channelIDsToNotify.indexOf(buttonInteraction.message.channelId) == -1) {
                             return
                         }
                         await this.handleButtonInteraction(buttonInteraction)
@@ -263,7 +269,8 @@ namespace DiscordBot {
                     else if (interaction.isModalSubmit())
                     {
                         let modalInteraction:Discord.ModalSubmitInteraction = interaction
-                        if (this.channelIDsToNotify.indexOf(modalInteraction.message.channelId) == -1) {
+                        let isInteractionFromDM = modalInteraction?.channel?.isDMBased()
+                        if (!isInteractionFromDM && this.channelIDsToNotify.indexOf(modalInteraction.message.channelId) == -1) {
                             return
                         }
                         await this.handleModalSubmit(modalInteraction)
@@ -419,11 +426,65 @@ namespace DiscordBot {
             return null;
         }
 
+        public async broadcastPrivateMessage(options:Models.MessageOptions) : Promise<Discord.Message[]> {
+            let payloads = this.buildMessagePayloadFromOptions(options);
+            let usersToTarget : { [key: string]: Discord.User } = {}
+            Logger.debug(this.prefix(), "Broadcasting private message to users in all channels")
+            for (let aChannel of this.channelsToNotify) {
+                for (let member of aChannel.members.values()) {
+                    if (member.user && member.user.bot == false && member.user.id != this.client.user.id && !usersToTarget[member.user.id]) {
+                        usersToTarget[member.user.id] = member.user
+                    }
+                }
+            }
+
+            let messagesSent : Discord.Message[] = []
+            try {
+                for (let user of Object.values(usersToTarget)) {
+                    Logger.debug(this.prefix(), "Sending DM to user", user.username, user.id)
+                    try {
+                        let dmChannel = await user.createDM();
+                        for (let payload of payloads)
+                        {
+                            messagesSent.push(await dmChannel.send(payload));
+                        }
+                    } catch (error) {
+                        Logger.error(this.prefix(), "Error sending DM to user", error, user)
+                    }
+                }
+            } catch (error) {
+                Logger.error(this.prefix(), "Error sending message", error, payloads)
+            }
+            return messagesSent
+        }
+
         public async sendMessageEmbed(options:Models.MessageOptions) : Promise<Discord.Message[]> {
+            let payloads = this.buildMessagePayloadFromOptions(options)
+
+            // Send messages
+            let messagesSent : Discord.Message[] = []
+            try {
+                for (let payload of payloads)
+                {
+                    for (let aChannel of this.channelsToNotify) {
+                        messagesSent.push(await aChannel.send(payload))
+                    }
+                }
+            } catch (error) {
+                Logger.error(this.prefix(), "Error sending message", error, payloads)
+            }
+            return messagesSent
+        }
+
+        private buildMessagePayloadFromOptions(options:Models.MessageOptions) : Discord.MessagePayload[] {
             options.color = options.color ? options.color : '#0099ff'
             let messageEmbed = new Discord.EmbedBuilder();
             this.buildEmbedFromOptions(messageEmbed, options)
+            let all_buttons = this.buildButtonsFromOptions(options)
+            return this.buildMessagePayloads(messageEmbed, all_buttons)
+        }
 
+        private buildButtonsFromOptions(options:Models.MessageOptions) : Discord.ButtonBuilder[] {
             let all_buttons : Discord.ButtonBuilder[] = []
             if (options.buttons)
             {
@@ -435,26 +496,11 @@ namespace DiscordBot {
                     }
                 }
             }
-            
-            
-            // Send messages
-            let messagesSent : Discord.Message[] = []
-            try {
-                let publications = this.buildPublications(messageEmbed, all_buttons)
-                for (let publi of publications)
-                {
-                    for (let aChannel of this.channelsToNotify) {
-                        messagesSent.push(await aChannel.send(publi))
-                    }
-                }
-            } catch (error) {
-                Logger.error(this.prefix(), "Error sending message", error, messageEmbed)
-            }
-            return messagesSent
+            return all_buttons
         }
 
         private buildEmbedFromOptions(messageEmbed : Discord.EmbedBuilder, options : Models.MessageOptions) {
-            Logger.debug(this.prefix(), "Building embed from options", options)
+            // Logger.debug(this.prefix(), "Building embed from options", options)
             let content = options.content
             if (content)
             {
@@ -507,12 +553,13 @@ namespace DiscordBot {
             return await this.sendMessageEmbed(options)
         }
         
-        private buildPublications(message: Discord.EmbedBuilder, all_buttons: Discord.ButtonBuilder[]) {
+        private buildMessagePayloads(message: Discord.EmbedBuilder, all_buttons: Discord.ButtonBuilder[]) : Discord.MessagePayload[] {
+            let publications = []
             if (all_buttons.length == 0)
             {
-                return [{ embeds: [message] }]
+                publications.push({ embeds: [message] })
+                return publications
             }
-            let publications = []
             // We should have 1 actionRows per 25 buttons
             let actionRowsList : Discord.ActionRowBuilder[][] = this.buildActionRowsList(all_buttons)
             for (let actionRows of actionRowsList)
