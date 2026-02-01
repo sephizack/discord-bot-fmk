@@ -25,10 +25,18 @@ namespace DiscordBot {
             callback?: any,
         }
 
+        export type ButtonInputSelectOption = {
+            name: string,
+            value: string,
+            description?: string
+            default?: boolean
+        }
+
         export type ButtonInput = {
             id: string,
             label: string,
             placeholder: string,
+            options?: ButtonInputSelectOption[],
             value?: string
             required?: boolean
             textarea?: boolean
@@ -294,11 +302,25 @@ namespace DiscordBot {
                 Logger.warning(this.prefix(), "No post action found for", modalInteraction.customId)
                 return
             }
-            // set inputs into post action
-            for (let actionRow of modalInteraction.components) {
-                for (let component of actionRow.components) {
-                    postAction.setProvidedInput(component.customId, component.value)
+
+            for (let input of postAction.expectedInputs) {
+                let inputId = input.id
+                let inputType = input.options && input.options.length > 0 ? "select" : "text"
+                let value = null
+                if (inputType == "text") {
+                    value = modalInteraction.fields.getTextInputValue(inputId);
                 }
+                else if (inputType == "select") {
+                    value = modalInteraction.fields.getStringSelectValues(inputId);
+                    if (value && value.length == 1) {
+                        value = value[0]
+                    }
+                }
+                if (value == null) {
+                    Logger.warning(this.prefix(), `No value found for input ${inputId} in modal interaction`)
+                    continue
+                }
+                postAction.setProvidedInput(inputId, value);
             }
 
             if (postAction.isInputMissing())
@@ -388,15 +410,32 @@ namespace DiscordBot {
                 .setCustomId(buttonInteraction.customId)
                 .setTitle(postAction.getModalTitle());
             for (let input of postAction.expectedInputs) {
-                const inputField = new Discord.TextInputBuilder()
-                    .setCustomId(input.id ? input.id : "input")
-                    .setLabel(input.label ? input.label : "input")
-                    .setPlaceholder(input.placeholder ? input.placeholder : "")
-                    .setValue(input.value ? input.value : "")
-                    .setRequired(input.required === false ? false : true)
-                    .setStyle(input.textarea ? Discord.TextInputStyle.Paragraph : Discord.TextInputStyle.Short);
-                const actionrow:any = new Discord.ActionRowBuilder().addComponents(inputField);
-                modal.addComponents(actionrow);
+                let label = new Discord.LabelBuilder()
+                    .setLabel(input.label ? input.label : "input");
+                if (input.options && input.options.length > 0) {
+                    let select = new Discord.StringSelectMenuBuilder()
+                        .setCustomId(input.id ? input.id : "input")
+                        .setPlaceholder(input.placeholder ? input.placeholder : "")
+                        .setRequired(input.required === false ? false : true)
+                        .addOptions(input.options.map((opt) => {
+                            return {
+                                label: opt.name,
+                                value: opt.value,
+                                description: opt.description ? opt.description : "",
+                                default: opt.default ? opt.default : false
+                            }
+                        }));
+                    label.setStringSelectMenuComponent(select);
+                } else {
+                    let inputField = new Discord.TextInputBuilder()
+                        .setCustomId(input.id ? input.id : "input")
+                        .setPlaceholder(input.placeholder ? input.placeholder : "")
+                        .setRequired(input.required === false ? false : true)
+                        .setValue(input.value ? input.value : "")
+                        .setStyle(input.textarea ? Discord.TextInputStyle.Paragraph : Discord.TextInputStyle.Short);
+                    label.setTextInputComponent(inputField);
+                }
+                modal.addLabelComponents(label);
             }
             buttonInteraction.showModal(modal);
         }
